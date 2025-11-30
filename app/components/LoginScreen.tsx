@@ -79,7 +79,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
   };
 
   return (
-    <div className="h-screen bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center p-4">
+    <div className="h-screen w-screen bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">

@@ -12,7 +12,6 @@ export default function MessageInput({ onSendMessage }: MessageInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Auto-focus input when component mounts
     inputRef.current?.focus();
   }, []);
 
@@ -20,7 +19,6 @@ export default function MessageInput({ onSendMessage }: MessageInputProps) {
     if (message.trim()) {
       onSendMessage(message.trim());
       setMessage("");
-      // Re-focus after sending
       setTimeout(() => inputRef.current?.focus(), 0);
     }
   };
@@ -33,7 +31,7 @@ export default function MessageInput({ onSendMessage }: MessageInputProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-t fixed bottom-0 w-full border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center gap-2">
         <input
           ref={inputRef}
@@ -46,7 +44,7 @@ export default function MessageInput({ onSendMessage }: MessageInputProps) {
         />
         <button
           onClick={handleSend}
-          className="p-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full hover:shadow-lg transition-all disabled:opacity-50"
+          className="p-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full hover:shadow-lg transition-all disabled:opacity-50 flex-shrink-0"
           disabled={!message.trim()}
         >
           <Send className="w-5 h-5" />
