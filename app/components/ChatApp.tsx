@@ -7,26 +7,30 @@ import EmptyState from "./EmptyState";
 import { Conversation, Message } from "../types/chat";
 import { conversationsData } from "../data/conversations";
 
+const getSavedSidebarWidth = () => {
+  if (typeof window === "undefined") return 35;
+  const saved = localStorage.getItem("tether-sidebar-width");
+  return saved ? parseFloat(saved) : 35;
+};
+
 export default function ChatApp() {
   const [selectedChat, setSelectedChat] = useState<Conversation | null>(null);
-  const [chatMessages, setChatMessages] = useState<Record<number, Message[]>>({});
-  const [sidebarWidth, setSidebarWidth] = useState<number | null>(null);
+  const [chatMessages, setChatMessages] = useState<Record<number, Message[]>>(
+    {}
+  );
+  const [sidebarWidth] = useState(getSavedSidebarWidth);
+  const [currentSidebarWidth, setCurrentSidebarWidth] = useState(sidebarWidth);
   const [isResizing, setIsResizing] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load everything from localStorage before rendering
-    const savedWidth = localStorage.getItem("tether-sidebar-width");
-    setSidebarWidth(savedWidth ? parseFloat(savedWidth) : 35);
-
     const initialMessages: Record<number, Message[]> = {};
     conversationsData.forEach((conv) => {
       initialMessages[conv.id] = [...conv.messages];
     });
     setChatMessages(initialMessages);
-
     setIsLoading(false);
   }, []);
 
@@ -51,10 +55,10 @@ export default function ChatApp() {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing || sidebarWidth === null) return;
+      if (!isResizing) return;
       const newWidth = (e.clientX / window.innerWidth) * 100;
       if (newWidth >= 25 && newWidth <= 50) {
-        setSidebarWidth(newWidth);
+        setCurrentSidebarWidth(newWidth);
         localStorage.setItem("tether-sidebar-width", newWidth.toString());
       }
     };
@@ -72,7 +76,7 @@ export default function ChatApp() {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isResizing, sidebarWidth]);
+  }, [isResizing]);
 
   const handleSendMessage = (message: string) => {
     if (!selectedChat) return;
@@ -112,28 +116,60 @@ export default function ChatApp() {
     }, 1000);
   };
 
-  const filteredConversations = conversationsData.filter((conv) => {
-    const query = searchQuery.toLowerCase();
-    const nameMatch = conv.name.toLowerCase().includes(query);
-    const messageMatch = chatMessages[conv.id]?.some((msg) =>
-      msg.text.toLowerCase().includes(query)
-    );
-    return nameMatch || messageMatch;
-  });
+  const handleDeleteConversation = (conversationId: number) => {
+    setChatMessages((prev) => {
+      const newMessages = { ...prev };
+      delete newMessages[conversationId];
+      return newMessages;
+    });
+    if (selectedChat?.id === conversationId) {
+      setSelectedChat(null);
+    }
+  };
 
-  if (isLoading || sidebarWidth === null) {
+  const handleClearChat = (conversationId: number) => {
+    setChatMessages((prev) => ({
+      ...prev,
+      [conversationId]: [],
+    }));
+  };
+
+  const getLastMessage = (conv: Conversation) => {
+    const messages = chatMessages[conv.id] || [];
+    if (messages.length === 0) return "Start a conversation";
+    const lastMsg = messages[messages.length - 1];
+    const prefix = lastMsg.isOwn ? "You: " : "";
+    return prefix + lastMsg.text;
+  };
+
+  const filteredConversations = conversationsData
+    .filter((conv) => chatMessages[conv.id] !== undefined)
+    .filter((conv) => {
+      const query = searchQuery.toLowerCase();
+      const nameMatch = conv.name.toLowerCase().includes(query);
+      const messageMatch = chatMessages[conv.id]?.some((msg) =>
+        msg.text.toLowerCase().includes(query)
+      );
+      return nameMatch || messageMatch;
+    });
+
+  if (isLoading) {
     return null;
   }
 
   if (isMobile) {
     return (
-      <div className="h-screen bg-gray-50 dark:bg-gray-900 max-w-2xl mx-auto">
+      <div className="h-full w-full bg-gray-50 dark:bg-gray-900">
         {selectedChat ? (
           <ChatView
             conversation={selectedChat}
             messages={chatMessages[selectedChat.id] || []}
             onBack={() => setSelectedChat(null)}
             onSendMessage={handleSendMessage}
+            onClearChat={() => handleClearChat(selectedChat.id)}
+            onDeleteConversation={() =>
+              handleDeleteConversation(selectedChat.id)
+            }
           />
         ) : (
           <ConversationsList
@@ -142,6 +178,7 @@ export default function ChatApp() {
             onSelectChat={setSelectedChat}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
+            getLastMessage={getLastMessage}
           />
         )}
       </div>
@@ -149,14 +186,18 @@ export default function ChatApp() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex">
-      <div style={{ width: `${sidebarWidth}%` }} className="border-r border-gray-300 dark:border-gray-700">
+    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex w-full">
+      <div
+        style={{ width: `${currentSidebarWidth}%` }}
+        className="border-r border-gray-300 dark:border-gray-700"
+      >
         <ConversationsList
           conversations={filteredConversations}
           selectedChat={selectedChat}
           onSelectChat={setSelectedChat}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          getLastMessage={getLastMessage}
         />
       </div>
 
@@ -165,13 +206,17 @@ export default function ChatApp() {
         onMouseDown={() => setIsResizing(true)}
       />
 
-      <div style={{ width: `${100 - sidebarWidth - 0.1}%` }}>
+      <div style={{ width: `${100 - currentSidebarWidth - 0.1}%` }}>
         {selectedChat ? (
           <ChatView
             conversation={selectedChat}
             messages={chatMessages[selectedChat.id] || []}
             onBack={() => setSelectedChat(null)}
             onSendMessage={handleSendMessage}
+            onClearChat={() => handleClearChat(selectedChat.id)}
+            onDeleteConversation={() =>
+              handleDeleteConversation(selectedChat.id)
+            }
           />
         ) : (
           <EmptyState />
