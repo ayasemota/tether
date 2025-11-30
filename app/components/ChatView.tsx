@@ -11,6 +11,8 @@ interface ChatViewProps {
   messages: Message[];
   onBack: () => void;
   onSendMessage: (message: string) => void;
+  onClearChat: () => void;
+  onDeleteConversation: () => void;
 }
 
 export default function ChatView({
@@ -18,6 +20,8 @@ export default function ChatView({
   messages,
   onBack,
   onSendMessage,
+  onClearChat,
+  onDeleteConversation,
 }: ChatViewProps) {
   const [viewportHeight, setViewportHeight] = useState<number>(0);
 
@@ -52,7 +56,12 @@ export default function ChatView({
       style={{ height: viewportHeight > 0 ? `${viewportHeight}px` : "100vh" }}
     >
       <div className="flex-shrink-0">
-        <ChatHeader conversation={conversation} onBack={onBack} />
+        <ChatHeader
+          conversation={conversation}
+          onBack={onBack}
+          onClearChat={onClearChat}
+          onDeleteConversation={onDeleteConversation}
+        />
       </div>
 
       <div className="flex-1 overflow-hidden min-h-0">
