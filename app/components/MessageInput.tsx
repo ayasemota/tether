@@ -33,7 +33,7 @@ export default function MessageInput({ onSendMessage }: MessageInputProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-white dark:bg-gray-800 border-t fixed bottom-0 w-full border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center gap-2">
         <input
           ref={inputRef}

@@ -127,7 +127,7 @@ export default function ChatApp() {
 
   if (isMobile) {
     return (
-      <div className="h-screen bg-gray-50 dark:bg-gray-900 max-w-2xl mx-auto">
+      <div className="h-screen bg-gray-50 dark:bg-gray-900 mx-auto">
         {selectedChat ? (
           <ChatView
             conversation={selectedChat}

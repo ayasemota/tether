@@ -10,7 +10,7 @@ interface ChatHeaderProps {
 
 export default function ChatHeader({ conversation, onBack }: ChatHeaderProps) {
   return (
-    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between">
+    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 fixed top-0 w-full px-4 py-3 flex items-center justify-between">
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}
