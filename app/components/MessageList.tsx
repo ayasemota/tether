@@ -30,13 +30,13 @@ export default function MessageList({
     return (
       <div className="h-full w-full overflow-y-auto p-4 flex items-center justify-center">
         <div className="text-center max-w-md">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-full app-gradient flex items-center justify-center">
             <MessageCircle className="w-10 h-10 text-white" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-xl font-semibold app-text mb-2">
             No messages yet
           </h3>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="app-text-secondary">
             Start the conversation with {conversation.name}. Send a message to
             get things started!
           </p>
@@ -60,21 +60,21 @@ export default function MessageList({
                 }`}
               >
                 {!msg.isOwn && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 ml-3">
+                  <p className="text-xs app-text-secondary mb-1 ml-3">
                     {msg.sender}
                   </p>
                 )}
                 <div
                   className={`px-4 py-2 rounded-2xl ${
                     msg.isOwn
-                      ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-br-sm"
-                      : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-sm shadow-sm"
+                      ? "app-gradient text-white rounded-br-sm"
+                      : "app-bg-secondary app-text rounded-bl-sm shadow-sm"
                   }`}
                 >
                   <p className="text-sm">{msg.text}</p>
                 </div>
                 <p
-                  className={`text-xs text-gray-400 dark:text-gray-500 mt-1 ${
+                  className={`text-xs app-text-tertiary mt-1 ${
                     msg.isOwn ? "text-right mr-3" : "ml-3"
                   }`}
                 >

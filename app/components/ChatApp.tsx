@@ -13,26 +13,23 @@ const getSavedSidebarWidth = () => {
   return saved ? parseFloat(saved) : 35;
 };
 
+const getInitialMessages = () => {
+  const initialMessages: Record<number, Message[]> = {};
+  conversationsData.forEach((conv) => {
+    initialMessages[conv.id] = [...conv.messages];
+  });
+  return initialMessages;
+};
+
 export default function ChatApp() {
   const [selectedChat, setSelectedChat] = useState<Conversation | null>(null);
-  const [chatMessages, setChatMessages] = useState<Record<number, Message[]>>(
-    {}
-  );
+  const [chatMessages, setChatMessages] =
+    useState<Record<number, Message[]>>(getInitialMessages);
   const [sidebarWidth] = useState(getSavedSidebarWidth);
   const [currentSidebarWidth, setCurrentSidebarWidth] = useState(sidebarWidth);
   const [isResizing, setIsResizing] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const initialMessages: Record<number, Message[]> = {};
-    conversationsData.forEach((conv) => {
-      initialMessages[conv.id] = [...conv.messages];
-    });
-    setChatMessages(initialMessages);
-    setIsLoading(false);
-  }, []);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -153,13 +150,9 @@ export default function ChatApp() {
       return nameMatch || messageMatch;
     });
 
-  if (isLoading) {
-    return null;
-  }
-
   if (isMobile) {
     return (
-      <div className="h-full w-full bg-gray-50 dark:bg-gray-900">
+      <div className="h-full w-full app-bg">
         {selectedChat ? (
           <ChatView
             conversation={selectedChat}
@@ -186,10 +179,10 @@ export default function ChatApp() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex w-full">
+    <div className="h-screen app-bg flex">
       <div
         style={{ width: `${currentSidebarWidth}%` }}
-        className="border-r border-gray-300 dark:border-gray-700"
+        className="app-border border-r"
       >
         <ConversationsList
           conversations={filteredConversations}
@@ -202,7 +195,7 @@ export default function ChatApp() {
       </div>
 
       <div
-        className="w-1 bg-gray-300 dark:bg-gray-700 hover:bg-blue-500 dark:hover:bg-blue-600 cursor-col-resize transition-colors"
+        className="w-1 app-border app-hover hover:bg-blue-500 cursor-col-resize transition-colors"
         onMouseDown={() => setIsResizing(true)}
       />
 

@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { X, LogOut, Trash2, MessageSquare, Bell, User, Settings, Lock } from "lucide-react";
+import {
+  X,
+  LogOut,
+  Trash2,
+  MessageSquare,
+  Bell,
+  User,
+  Settings,
+  Lock,
+} from "lucide-react";
 import ConfirmModal from "./ConfirmModal";
 import Modal from "./Modal";
 
