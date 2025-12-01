@@ -28,26 +28,22 @@ export default function ChatHeader({
 
   return (
     <>
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between">
+      <div className="app-bg-secondary app-border border-b px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            className="lg:hidden p-2 app-hover rounded-full transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <ArrowLeft className="w-5 h-5 app-text-secondary" />
           </button>
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-semibold">
+          <div className="w-10 h-10 rounded-full app-gradient flex items-center justify-center text-white font-semibold">
             {conversation.initials}
           </div>
           <div>
-            <h2 className="font-semibold text-gray-900 dark:text-white">
-              {conversation.name}
-            </h2>
+            <h2 className="font-semibold app-text">{conversation.name}</h2>
             <p
               className={`text-xs ${
-                conversation.online
-                  ? "text-green-500"
-                  : "text-gray-400 dark:text-gray-500"
+                conversation.online ? "text-green-500" : "app-text-tertiary"
               }`}
             >
               {conversation.online ? "Online" : "Offline"}
@@ -58,21 +54,21 @@ export default function ChatHeader({
         <div className="flex items-center gap-3">
           <button
             onClick={handleUnavailableFeature}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            className="p-2 app-hover rounded-full transition-colors"
           >
-            <Phone className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <Phone className="w-5 h-5 app-text-secondary" />
           </button>
           <button
             onClick={handleUnavailableFeature}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            className="p-2 app-hover rounded-full transition-colors"
           >
-            <Video className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <Video className="w-5 h-5 app-text-secondary" />
           </button>
           <button
             onClick={() => setShowMenu(true)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            className="p-2 app-hover rounded-full transition-colors"
           >
-            <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <MoreVertical className="w-5 h-5 app-text-secondary" />
           </button>
         </div>
       </div>

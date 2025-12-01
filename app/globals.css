@@ -1,32 +1,43 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-primary: #f9fafb;
+  --bg-secondary: #ffffff;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --border-primary: #e5e7eb;
+  --border-secondary: #d1d5db;
+  --input-bg: #f3f4f6;
+  --hover-bg: #f3f4f6;
+  --selected-bg: #eff6ff;
+  --avatar-border: #ffffff;
+  --gradient-from: #3b82f6;
+  --gradient-to: #06b6d4;
+}
+
+.dark {
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --border-primary: #374151;
+  --border-secondary: #4b5563;
+  --input-bg: #374151;
+  --hover-bg: #374151;
+  --selected-bg: #374151;
+  --avatar-border: #1f2937;
+  --gradient-from: #3b82f6;
+  --gradient-to: #06b6d4;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-.dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
@@ -39,6 +50,54 @@ body,
   padding: 0;
   position: fixed;
   overflow: hidden;
+}
+
+.app-bg {
+  background-color: var(--bg-primary);
+}
+
+.app-bg-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.app-text {
+  color: var(--text-primary);
+}
+
+.app-text-secondary {
+  color: var(--text-secondary);
+}
+
+.app-text-tertiary {
+  color: var(--text-tertiary);
+}
+
+.app-border {
+  border-color: var(--border-primary);
+}
+
+.app-border-secondary {
+  border-color: var(--border-secondary);
+}
+
+.app-input {
+  background-color: var(--input-bg);
+}
+
+.app-hover:hover {
+  background-color: var(--hover-bg);
+}
+
+.app-selected {
+  background-color: var(--selected-bg);
+}
+
+.app-gradient {
+  background: linear-gradient(to right, var(--gradient-from), var(--gradient-to));
+}
+
+.app-avatar-border {
+  border-color: var(--avatar-border);
 }
 
 @supports (height: 100dvh) {

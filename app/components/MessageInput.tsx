@@ -31,7 +31,7 @@ export default function MessageInput({ onSendMessage }: MessageInputProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+    <div className="app-bg-secondary app-border border-t p-4">
       <div className="flex items-center gap-2">
         <input
           ref={inputRef}
@@ -40,11 +40,11 @@ export default function MessageInput({ onSendMessage }: MessageInputProps) {
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Type a message..."
-          className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+          className="flex-1 px-4 py-3 app-input app-text rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
         />
         <button
           onClick={handleSend}
-          className="p-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full hover:shadow-lg transition-all disabled:opacity-50 flex-shrink-0"
+          className="p-3 app-gradient text-white rounded-full hover:shadow-lg transition-all disabled:opacity-50 flex-shrink-0"
           disabled={!message.trim()}
         >
           <Send className="w-5 h-5" />
