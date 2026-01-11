@@ -4,11 +4,10 @@ from beanie import init_beanie
 from pymongo import AsyncMongoClient
 
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_beanie(
-        AsyncMongoClient("mongodb://localhost:27017").get_default_database(),
+        AsyncMongoClient("mongodb://localhost:27017"),
         document_models=[User]
     )
     print("MongoDb Connected")
