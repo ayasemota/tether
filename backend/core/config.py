@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
+from typing import Optional
 
 class Settings(BaseSettings):
     """
@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     FIREBASE_API_KEY: str
     FIREBASE_CREDENTIALS_PATH: str
     DB_NAME: str
+    PASSWORD_RESET_URL: Optional[str] = None
+    EMAIL_VERIFICATION_SUCCESS_URL: Optional[str] = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
