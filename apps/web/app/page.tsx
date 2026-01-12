@@ -1,5 +1,4 @@
-<<<<<<< Updated upstream
-=======
+
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
