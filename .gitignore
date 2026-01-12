@@ -1,1 +1,4 @@
 venv/
+firebase-credentials.json
+.env
+samueldare-firebase-adminsdk-fbsvc-5a2cf0e294.json
