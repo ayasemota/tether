@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+
+>>>>>>> UserAuthetication
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
@@ -15,7 +19,11 @@ import {
   currentUser,
   getConversationMessages,
   getLastMessage,
+<<<<<<< HEAD
   type User,
+=======
+  // type User,
+>>>>>>> UserAuthetication
   type Message
 } from '@/lib/mockData';
 import Image from 'next/image';
@@ -31,7 +39,10 @@ function ChatApp() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mediaModalOpen, setMediaModalOpen] = useState(false);
   const [selectedMediaUrl, setSelectedMediaUrl] = useState<string | null>(null);
+<<<<<<< HEAD
   
+=======
+>>>>>>> UserAuthetication
 
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
   
@@ -41,7 +52,10 @@ function ChatApp() {
     ? mockUsers.find(u => u.id === selectedUserId) || null 
     : null;
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> UserAuthetication
   useEffect(() => {
     if (selectedUser) {
       const msgs = getConversationMessages(selectedUser.id);
@@ -412,6 +426,10 @@ function ChatApp() {
   );
 }
 
+<<<<<<< HEAD
+=======
+>>>>>>> Stashed changes
+>>>>>>> UserAuthetication
 export default function Home() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
