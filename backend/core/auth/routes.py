@@ -5,7 +5,7 @@ This module defines API endpoints for Firebase authentication operations.
 All routes are documented with OpenAPI/Swagger specifications.
 """
 
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Depends, status, Query, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import HTMLResponse, RedirectResponse
 from typing import Dict, Any, Optional
@@ -543,30 +543,56 @@ async def verify_email_callback(
     auth_service: FirebaseAuthService = Depends(get_auth_service)
 ):
     """
-    Custom email verification callback endpoint.
+    Firebase authentication action callback endpoint.
     
-    This endpoint receives the verification link click from Firebase emails
-    and delegates the verification logic to the service layer.
+    This endpoint handles various Firebase authentication actions such as
+    email verification and password resets.
     """
-    logger.info(f"Email verification callback received: mode={mode}, oobCode={oobCode[:10]}...")
+    logger.info(f"Auth callback received: mode={mode}, oobCode={oobCode[:10]}...")
     
-    # Check if this is an email verification request
-    if mode != "verifyEmail":
-        logger.warning(f"Invalid mode received: {mode}")
+    # Branch based on mode
+    if mode == "verifyEmail":
+        # Handle email verification
+        html_content = await auth_service.handle_email_verification_callback(oobCode)
+        
+        # Check if we should redirect instead of returning the success page
+        success_url = settings.EMAIL_VERIFICATION_SUCCESS_URL if hasattr(settings, 'EMAIL_VERIFICATION_SUCCESS_URL') else None
+        if success_url and "Email Verified!" in html_content:
+            return RedirectResponse(url=success_url)
+        
+        return HTMLResponse(content=html_content)
+        
+    elif mode == "resetPassword":
+        # Handle password reset
+        # Check for custom frontend redirect
+        reset_url = settings.PASSWORD_RESET_URL if hasattr(settings, 'PASSWORD_RESET_URL') else None
+        if reset_url:
+            # Redirect to custom frontend with oobCode
+            separator = "&" if "?" in reset_url else "?"
+            return RedirectResponse(url=f"{reset_url}{separator}oobCode={oobCode}&mode={mode}")
+            
+        # Fallback to built-in backend form
+        html_content = await auth_service.handle_password_reset_callback(oobCode)
+        return HTMLResponse(content=html_content)
+        
+    else:
+        logger.warning(f"Unsupported auth mode received: {mode}")
         return HTMLResponse(
-            content=auth_service.get_error_page(f"Invalid verification mode: {mode}"),
+            content=auth_service.get_error_page(f"Invalid or unsupported auth mode: {mode}"),
             status_code=400
         )
-    
-    # Delegate to service layer
-    html_content = await auth_service.handle_email_verification_callback(oobCode)
-    
-    # Check if we should redirect instead of returning the success page
-    # (Only if it was a success and success_url is configured)
-    success_url = settings.EMAIL_VERIFICATION_SUCCESS_URL if hasattr(settings, 'EMAIL_VERIFICATION_SUCCESS_URL') else None
-    
-    if success_url and "Email Verified!" in html_content:
-        return RedirectResponse(url=success_url)
-    
+
+
+@router.post("/reset-password-confirm")
+async def reset_password_confirm(
+    oob_code: str = Form(...),
+    new_password: str = Form(...),
+    auth_service: FirebaseAuthService = Depends(get_auth_service)
+):
+    """
+    Handle the password reset form submission.
+    """
+    logger.info("Password reset confirmation received")
+    html_content = await auth_service.reset_password_with_oob_code(oob_code, new_password)
     return HTMLResponse(content=html_content)
 

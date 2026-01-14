@@ -39,6 +39,7 @@ from backend.core.errors import (
     AccountDisabledException,
     RateLimitException
 )
+from backend.core.config import settings
 
 
 class FirebaseAuthService:
@@ -555,6 +556,207 @@ class FirebaseAuthService:
         except Exception as e:
             logger.error(f"Email verification callback failed: {str(e)}", exc_info=True)
             return self.get_error_page(str(e))
+
+    async def handle_password_reset_callback(self, oob_code: str) -> str:
+        """
+        Handle the password reset callback from Firebase.
+        
+        Verifies the code and returns the password reset form.
+        
+        Args:
+            oob_code: One-time verification code from Firebase
+            
+        Returns:
+            str: HTML form or error page
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        try:
+            # Verify the oobCode
+            firebase_response = await self._verify_oob_code(oob_code)
+            email = firebase_response.get("email")
+            
+            if not email:
+                raise Exception("Unable to identify email for this reset request.")
+            
+            # Return the reset form
+            return self.get_password_reset_form(oob_code, email)
+            
+        except Exception as e:
+            logger.error(f"Password reset callback failed: {str(e)}", exc_info=True)
+            return self.get_error_page(str(e))
+
+    async def reset_password_with_oob_code(self, oob_code: str, new_password: str) -> str:
+        """
+        Update user's password using the Firebase oobCode.
+        
+        Args:
+            oob_code: One-time code from Firebase
+            new_password: The new password to set
+            
+        Returns:
+            str: Success page or error logic
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        try:
+            # Step 1: Confirm the password reset with Firebase
+            url = f"https://identitytoolkit.googleapis.com/v1/accounts:resetPassword?key={self.FIREBASE_API_KEY}"
+            payload = {
+                "oobCode": oob_code,
+                "newPassword": new_password
+            }
+            
+            response = requests.post(url, json=payload)
+            
+            if response.status_code != 200:
+                error_data = response.json()
+                error_message = error_data.get('error', {}).get('message', 'Failed to reset password')
+                raise Exception(f"Firebase error: {error_message}")
+            
+            # Step 2: Return success page
+            return self.get_password_reset_success_page()
+            
+        except Exception as e:
+            logger.error(f"Password reset confirmation failed: {str(e)}", exc_info=True)
+            return self.get_error_page(str(e))
+
+    def get_password_reset_form(self, oob_code: str, email: str) -> str:
+        """Generate a beautiful HTML password reset form."""
+        return f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Reset Password - Tether</title>
+            <style>
+                * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    min-height: 100vh;
+                    display: flex; align-items: center; justify-content: center; padding: 20px;
+                }}
+                .container {{
+                    background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                    padding: 40px; max-width: 450px; width: 100%; text-align: center;
+                }}
+                h1 {{ color: #1a202c; font-size: 28px; margin-bottom: 12px; font-weight: 700; }}
+                p {{ color: #4a5568; font-size: 15px; line-height: 1.6; margin-bottom: 24px; }}
+                .email {{ color: #667eea; font-weight: 600; }}
+                form {{ text-align: left; }}
+                .form-group {{ margin-bottom: 20px; }}
+                label {{ display: block; margin-bottom: 8px; font-weight: 600; color: #4a5568; font-size: 14px; }}
+                input {{
+                    width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px;
+                    font-size: 16px; transition: border-color 0.2s; outline: none;
+                }}
+                input:focus {{ border-color: #667eea; }}
+                .button {{
+                    width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white; padding: 14px; border-radius: 8px; border: none;
+                    text-decoration: none; font-weight: 600; font-size: 16px; cursor: pointer;
+                    margin-top: 10px; transition: transform 0.2s, box-shadow 0.2s;
+                }}
+                .button:hover {{ transform: translateY(-1px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }}
+                .error {{ color: #e53e3e; font-size: 13px; margin-top: 5px; display: none; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Reset Password</h1>
+                <p>Set a new password for <span class="email">{email}</span></p>
+                
+                <form id="resetForm" action="/api/v1/auth/reset-password-confirm" method="POST">
+                    <input type="hidden" name="oob_code" value="{oob_code}">
+                    
+                    <div class="form-group">
+                        <label for="new_password">New Password</label>
+                        <input type="password" id="new_password" name="new_password" placeholder="At least 6 characters" required minlength="6">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm New Password</label>
+                        <input type="password" id="confirm_password" placeholder="Verify your password" required>
+                        <div id="mismatchError" class="error">Passwords do not match</div>
+                    </div>
+                    
+                    <button type="submit" class="button">Update Password</button>
+                </form>
+            </div>
+            
+            <script>
+                const form = document.getElementById('resetForm');
+                const password = document.getElementById('new_password');
+                const confirm = document.getElementById('confirm_password');
+                const error = document.getElementById('mismatchError');
+                
+                form.onsubmit = (e) => {{
+                    if (password.value !== confirm.value) {{
+                        e.preventDefault();
+                        error.style.display = 'block';
+                        return false;
+                    }}
+                    error.style.display = 'none';
+                }};
+                
+                confirm.oninput = () => {{
+                    if (password.value === confirm.value) error.style.display = 'none';
+                }};
+            </script>
+        </body>
+        </html>
+        """
+
+    def get_password_reset_success_page(self) -> str:
+        """Generate success page after password reset."""
+        return f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Password Updated - Tether</title>
+            <style>
+                * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    min-height: 100vh;
+                    display: flex; align-items: center; justify-content: center; padding: 20px;
+                }}
+                .container {{
+                    background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                    padding: 48px; max-width: 500px; width: 100%; text-align: center;
+                }}
+                .success-icon {{
+                    width: 70px; height: 70px; background: #48bb78; border-radius: 50%;
+                    display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;
+                    color: white; font-size: 32px;
+                }}
+                h1 {{ color: #1a202c; font-size: 32px; margin-bottom: 16px; font-weight: 700; }}
+                p {{ color: #4a5568; font-size: 16px; line-height: 1.6; margin-bottom: 24px; }}
+                .button {{
+                    display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white; padding: 14px 32px; border-radius: 8px;
+                    text-decoration: none; font-weight: 600; transition: transform 0.2s;
+                }}
+                .button:hover {{ transform: translateY(-2px); }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="success-icon">✓</div>
+                <h1>Password Reset!</h1>
+                <p>Your password has been successfully updated. You can now log in with your new password.</p>
+                <a href="/" class="button">Back to Login</a>
+            </div>
+        </body>
+        </html>
+        """
 
     async def _verify_oob_code(self, oob_code: str) -> dict:
         """Internal method to verify oobCode."""
