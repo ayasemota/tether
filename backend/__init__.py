@@ -7,6 +7,7 @@ from backend.core.config import settings
 from backend.db.models import Users
 from backend.core.auth.routes import router as auth_router
 from backend.core.errors import register_exception_handlers
+from backend.core.middleware import setup_middleware
 
 
 @asynccontextmanager
@@ -37,6 +38,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Register middleware
+setup_middleware(app)
 
 # Register exception handlers
 register_exception_handlers(app)

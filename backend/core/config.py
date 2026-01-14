@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     DB_NAME: str
     PASSWORD_RESET_URL: Optional[str] = None
     EMAIL_VERIFICATION_SUCCESS_URL: Optional[str] = None
+    ALLOWED_ORIGINS: list[str] = ["*"]
 
     model_config = SettingsConfigDict(
         env_file=".env",
