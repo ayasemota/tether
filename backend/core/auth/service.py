@@ -10,6 +10,7 @@ from firebase_admin import auth, credentials
 from typing import Optional, Dict, Any
 from datetime import datetime
 import requests
+import json
 from backend.core.config import settings
 from backend.core.auth.schemas import (
     UserRegistrationRequest,
@@ -67,7 +68,24 @@ class FirebaseAuthService:
         """
         if not firebase_admin._apps:
             # Initialize Firebase Admin SDK with service account credentials
-            cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
+            if settings.FIREBASE_CREDENTIALS_JSON:
+                try:
+                    cred_dict = json.loads(settings.FIREBASE_CREDENTIALS_JSON)
+                    cred = credentials.Certificate(cred_dict)
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Failed to parse FIREBASE_CREDENTIALS_JSON: {str(e)}")
+                    # Fallback to path if parsing fails
+                    if settings.FIREBASE_CREDENTIALS_PATH:
+                        cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
+                    else:
+                        raise e
+            elif settings.FIREBASE_CREDENTIALS_PATH:
+                cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
+            else:
+                raise ValueError("Neither FIREBASE_CREDENTIALS_JSON nor FIREBASE_CREDENTIALS_PATH is provided.")
+            
             firebase_admin.initialize_app(cred)
     
     async def register_user(self, registration_data: UserRegistrationRequest) -> AuthResponse:

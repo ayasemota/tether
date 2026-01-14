@@ -12,7 +12,8 @@ class Settings(BaseSettings):
     """
     DATABASE_URL: str
     FIREBASE_API_KEY: str
-    FIREBASE_CREDENTIALS_PATH: str
+    FIREBASE_CREDENTIALS_PATH: Optional[str] = None
+    FIREBASE_CREDENTIALS_JSON: Optional[str] = None
     DB_NAME: str
     PASSWORD_RESET_URL: Optional[str] = None
     EMAIL_VERIFICATION_SUCCESS_URL: Optional[str] = None
