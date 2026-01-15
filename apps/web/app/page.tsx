@@ -10,12 +10,13 @@ import { Logo } from "@/components/ui/Logo";
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { login, signup } = useAuth();
+  const { login, signup, isLoading: authLoading } = useAuth();
 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [username, setUsername] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -27,18 +28,26 @@ export default function OnboardingPage() {
     setIsLoading(true);
 
     try {
-      let success = false;
-
       if (mode === "login") {
-        success = await login(email, password);
+        const result = await login(email, password);
+        if (result.success) {
+          router.push("/chat");
+        } else {
+          setError(result.error || "Invalid credentials.");
+        }
       } else {
-        success = await signup(firstName, lastName, email, password);
-      }
-
-      if (success) {
-        router.push("/chat");
-      } else {
-        setError("Invalid credentials. Try demo@tether.app / demo123");
+        const result = await signup(
+          username,
+          firstName,
+          lastName,
+          email,
+          password
+        );
+        if (result.success) {
+          router.push("/chat");
+        } else {
+          setError(result.error || "Could not create account.");
+        }
       }
     } catch {
       setError("Something went wrong. Please try again.");
@@ -51,6 +60,17 @@ export default function OnboardingPage() {
     setMode((prev) => (prev === "login" ? "signup" : "login"));
     setError("");
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <Logo size="lg" showText={false} />
+          <p className="mt-4 text-foreground-muted animate-pulse">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-dvh flex flex-col bg-background my-14">
@@ -82,21 +102,50 @@ export default function OnboardingPage() {
               {mode === "signup" && (
                 <>
                   <Input
-                    label="First Name"
+                    label="Username"
                     type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="John"
+                    value={username}
+                    onChange={(e) =>
+                      setUsername(
+                        e.target.value.toLowerCase().replace(/\s/g, "")
+                      )
+                    }
+                    placeholder="johndoe"
                     required
+                    icon={
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                    }
                   />
-                  <Input
-                    label="Last Name"
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Doe"
-                    required
-                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      label="First Name"
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="John"
+                      required
+                    />
+                    <Input
+                      label="Last Name"
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Doe"
+                      required
+                    />
+                  </div>
                 </>
               )}
 
@@ -181,9 +230,9 @@ export default function OnboardingPage() {
             <div className="mt-6 p-3 rounded-md bg-surface border border-border">
               <p className="text-xs text-foreground-muted text-center">
                 <span className="font-medium text-foreground-secondary">
-                  Demo Mode:
+                  Note:
                 </span>{" "}
-                Use any email and password
+                First request may take up to 30 seconds (server startup)
               </p>
             </div>
           </div>

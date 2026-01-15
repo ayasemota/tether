@@ -9,135 +9,200 @@ import React, {
   useMemo,
 } from "react";
 import { User, AuthState } from "@/lib/types";
-import { currentUser } from "@/lib/mockData";
+import {
+  authApi,
+  AuthApiError,
+  getStoredTokens,
+  setStoredTokens,
+  clearStoredTokens,
+  ApiUser,
+} from "@/lib/api";
 
-const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_EMAIL || "demo@tether.app";
-const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD || "demo123";
 const AUTH_STORAGE_KEY = "tether-auth";
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<{ success: boolean; error?: string }>;
   signup: (
+    username: string,
     firstName: string,
     lastName: string,
     email: string,
     password: string
-  ) => Promise<boolean>;
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function getInitialAuthState(): { authState: AuthState; isReady: boolean } {
-  if (typeof window === "undefined") {
-    return {
-      authState: { isAuthenticated: false, user: null },
-      isReady: false,
-    };
-  }
+/**
+ * Convert API user to local User format
+ */
+function apiUserToUser(apiUser: ApiUser): User {
+  // Parse display_name into first/last name
+  const nameParts = apiUser.display_name.split(" ");
+  const firstName = nameParts[0] || apiUser.username;
+  const lastName = nameParts.slice(1).join(" ") || "";
 
-  try {
-    const savedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (savedAuth) {
-      const parsed = JSON.parse(savedAuth);
-      if (parsed.isAuthenticated && parsed.user) {
-        return {
-          authState: { isAuthenticated: true, user: parsed.user },
-          isReady: true,
-        };
-      }
-    }
-  } catch {}
-
-  return { authState: { isAuthenticated: false, user: null }, isReady: true };
+  return {
+    id: apiUser.id,
+    firstName,
+    lastName,
+    username: apiUser.username,
+    email: apiUser.email,
+    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${apiUser.username}`,
+    status: "online",
+  };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [authState, setAuthState] = useState<AuthState>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const savedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
-        if (savedAuth) {
-          const parsed = JSON.parse(savedAuth);
-          if (parsed.isAuthenticated && parsed.user) {
-            return { isAuthenticated: true, user: parsed.user };
-          }
-        }
-      } catch {}
-    }
-    return { isAuthenticated: false, user: null };
+  const [authState, setAuthState] = useState<AuthState>({
+    isAuthenticated: false,
+    user: null,
   });
-
+  const [isLoading, setIsLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
 
+  // Initialize auth state from stored tokens
   useEffect(() => {
     setMounted(true);
+
+    const initializeAuth = async () => {
+      const tokens = getStoredTokens();
+
+      if (tokens?.access_token) {
+        try {
+          // Try to get user profile with stored token
+          const apiUser = await authApi.getMe(tokens.access_token);
+          const user = apiUserToUser(apiUser);
+          setAuthState({ isAuthenticated: true, user });
+          localStorage.setItem(
+            AUTH_STORAGE_KEY,
+            JSON.stringify({ isAuthenticated: true, user })
+          );
+        } catch (error) {
+          // Token might be expired, try to refresh
+          if (tokens.refresh_token) {
+            try {
+              const newTokens = await authApi.refreshToken(
+                tokens.refresh_token
+              );
+              const apiUser = await authApi.getMe(newTokens.access_token);
+              const user = apiUserToUser(apiUser);
+              setAuthState({ isAuthenticated: true, user });
+              localStorage.setItem(
+                AUTH_STORAGE_KEY,
+                JSON.stringify({ isAuthenticated: true, user })
+              );
+            } catch {
+              // Refresh failed, clear everything
+              clearStoredTokens();
+              localStorage.removeItem(AUTH_STORAGE_KEY);
+              setAuthState({ isAuthenticated: false, user: null });
+            }
+          } else {
+            clearStoredTokens();
+            localStorage.removeItem(AUTH_STORAGE_KEY);
+            setAuthState({ isAuthenticated: false, user: null });
+          }
+        }
+      } else {
+        // Check for cached auth state (for faster initial render)
+        try {
+          const savedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
+          if (savedAuth) {
+            const parsed = JSON.parse(savedAuth);
+            if (parsed.isAuthenticated && parsed.user) {
+              setAuthState({ isAuthenticated: true, user: parsed.user });
+            }
+          }
+        } catch {}
+      }
+
+      setIsLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
-  useEffect(() => {
-    if (mounted) {
-      if (authState.isAuthenticated) {
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState));
-      } else {
-        localStorage.removeItem(AUTH_STORAGE_KEY);
-      }
-    }
-  }, [authState, mounted]);
-
   const login = useCallback(
-    async (email: string, password: string): Promise<boolean> => {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+    async (
+      email: string,
+      password: string
+    ): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const response = await authApi.login({ email, password });
+        const user = apiUserToUser(response.user);
 
-      if (
-        (email === DEMO_EMAIL && password === DEMO_PASSWORD) ||
-        (email.includes("@") && password.length >= 1)
-      ) {
-        const user: User = {
-          ...currentUser,
-          firstName: email.split("@")[0],
-          lastName: "",
-          username: email.split("@")[0].toLowerCase().replace(/\s/g, ""),
-        };
         setAuthState({ isAuthenticated: true, user });
-        return true;
-      }
+        localStorage.setItem(
+          AUTH_STORAGE_KEY,
+          JSON.stringify({ isAuthenticated: true, user })
+        );
 
-      return false;
+        return { success: true };
+      } catch (error) {
+        if (error instanceof AuthApiError) {
+          return { success: false, error: error.message };
+        }
+        return {
+          success: false,
+          error: "Failed to connect. Please try again.",
+        };
+      }
     },
     []
   );
 
   const signup = useCallback(
     async (
+      username: string,
       firstName: string,
       lastName: string,
       email: string,
       password: string
-    ): Promise<boolean> => {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+    ): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const displayName = `${firstName} ${lastName}`.trim();
 
-      if (
-        firstName &&
-        lastName &&
-        email.includes("@") &&
-        password.length >= 1
-      ) {
-        const user: User = {
-          ...currentUser,
-          firstName,
-          lastName,
-          username: `${firstName}${lastName}`.toLowerCase().replace(/\s/g, ""),
-        };
+        // Register the user
+        await authApi.register({
+          email,
+          password,
+          username,
+          display_name: displayName,
+        });
+
+        // Login after successful registration
+        const loginResponse = await authApi.login({ email, password });
+        const user = apiUserToUser(loginResponse.user);
+
         setAuthState({ isAuthenticated: true, user });
-        return true;
-      }
+        localStorage.setItem(
+          AUTH_STORAGE_KEY,
+          JSON.stringify({ isAuthenticated: true, user })
+        );
 
-      return false;
+        return { success: true };
+      } catch (error) {
+        if (error instanceof AuthApiError) {
+          return { success: false, error: error.message };
+        }
+        return {
+          success: false,
+          error: "Failed to create account. Please try again.",
+        };
+      }
     },
     []
   );
 
   const logout = useCallback(() => {
+    clearStoredTokens();
+    localStorage.removeItem(AUTH_STORAGE_KEY);
     setAuthState({ isAuthenticated: false, user: null });
   }, []);
 
@@ -147,8 +212,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       signup,
       logout,
+      isLoading,
     }),
-    [authState, login, signup, logout]
+    [authState, login, signup, logout, isLoading]
   );
 
   if (!mounted) {

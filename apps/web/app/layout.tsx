@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Tether - Connect with your circle",
   description:
-    "A modern, minimal chat application for staying connected with the people who matter most.",
-  keywords: ["chat", "messaging", "communication", "tether"],
+    "A modern, minimal chat application.",
+  keywords: ["ayasemota", "communication", "tether"],
 };
 
 export default function RootLayout({

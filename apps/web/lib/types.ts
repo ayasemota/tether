@@ -7,9 +7,16 @@ export interface User {
   firstName: string;
   lastName: string;
   username: string;
+  email: string;
   avatar: string;
   status: "online" | "offline" | "away";
   lastSeen?: Date;
+}
+
+export interface AuthTokens {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
 }
 
 export interface Message {

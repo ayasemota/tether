@@ -15,12 +15,7 @@ import { Logo } from "@/components/ui/Logo";
 import { ConversationList } from "@/components/chat/ConversationList";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SearchResults } from "@/components/search/SearchResults";
-import {
-  mockConversations,
-  mockUsers,
-  mockMessages,
-  currentUser,
-} from "@/lib/mockData";
+import { mockConversations, mockUsers, mockMessages } from "@/lib/mockData";
 import { SearchResult, SearchMode, Conversation } from "@/lib/types";
 
 const SIDEBAR_MIN_WIDTH = 300;
@@ -51,7 +46,7 @@ export default function ChatLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
   const [conversations] = useState<Conversation[]>(mockConversations);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchMode, setSearchMode] = useState<SearchMode>("text");
@@ -278,17 +273,17 @@ export default function ChatLayout({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Avatar
-                src={currentUser.avatar}
-                name={`${currentUser.firstName} ${currentUser.lastName}`}
+                src={user?.avatar || ""}
+                name={user ? `${user.firstName} ${user.lastName}` : ""}
                 status="online"
                 size="md"
               />
               <div>
                 <p className="font-medium text-foreground text-sm">
-                  {currentUser.firstName} {currentUser.lastName}
+                  {user?.firstName} {user?.lastName}
                 </p>
                 <p className="text-xs text-foreground-muted">
-                  @{currentUser.username}
+                  @{user?.username}
                 </p>
               </div>
             </div>
